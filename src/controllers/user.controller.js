@@ -166,8 +166,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: {
-        refreshToken: undefined,
+      $unset: {
+        refreshToken: 1, // this will remove the field from the document
       },
     },
     {
@@ -294,7 +294,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error while uploading on avatar.");
   }
 
-  await deleteFromCloudinary(avatar?.public_id);
+  // await deleteFromCloudinary(avatar?.public_id);
 
   const user = await User.findByIdAndUpdate(
     req.user?._id,
@@ -324,7 +324,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error while uploading on cover image.");
   }
 
-  await deleteFromCloudinary(coverImage?.public_id);
+  // await deleteFromCloudinary(coverImage?.public_id);
 
   const user = await User.findByIdAndUpdate(
     req.user?._id,
@@ -408,15 +408,14 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, channel[0]),
-      "User Channel Fethced Successfully"
+      new ApiResponse(200, channel[0], "User Channel Fethced Successfully")
     );
 });
 
 const getWatchHistory = asyncHandler(async (req, res) => {
   const user = await User.aggregate([
     {
-      match: {
+      $match: {
         _id: new mongoose.Types.ObjectId(req.user._id),
       },
     },
