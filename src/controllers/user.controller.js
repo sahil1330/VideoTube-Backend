@@ -97,7 +97,7 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   const createdUser = await User.findById(user._id).select(
-    "-password -refreshToken"
+    "-password -refreshToken -avatarPublicId -coverImagePublicId"
   );
 
   if (!createdUser) {
@@ -139,7 +139,7 @@ const loginUser = asyncHandler(async (req, res) => {
   );
 
   const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken"
+    "-password -refreshToken -avatarPublicId -coverImagePublicId"
   );
 
   const options = {
@@ -203,7 +203,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       process.env.REFRESH_TOKEN_SECRET
     );
 
-    const user = await User.findById(decodedToken?._id).select("-password");
+    const user = await User.findById(decodedToken?._id).select("-password -avatarPublicId -coverImagePublicId");
 
     if (!user) {
       throw new ApiError(401, "Invalid Refresh Token");
@@ -277,7 +277,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
       },
     },
     { new: true }
-  ).select("-password");
+  ).select("-password -avatarPublicId -coverImagePublicId");
   return res
     .status(200)
     .json(new ApiResponse(200, user, "User details updated successfully."));
@@ -314,7 +314,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
       },
     },
     { new: true }
-  ).select("-password");
+  ).select("-password -avatarPublicId -coverImagePublicId");
 
   return res
     .status(200)
@@ -350,7 +350,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
       },
     },
     { new: true }
-  ).select("-password");
+  ).select("-password -avatarPublicId -coverImagePublicId");
 
   return res
     .status(200)
