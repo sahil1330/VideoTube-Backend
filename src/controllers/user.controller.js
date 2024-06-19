@@ -88,7 +88,9 @@ const registerUser = asyncHandler(async (req, res) => {
   const user = await User.create({
     fullName,
     avatar: avatar.url,
+    avatarPublicId: avatar.public_id,
     coverImage: coverImage?.url,
+    coverImagePublicId: coverImage.public_id,
     email,
     password,
     username: username.toLowerCase(),
@@ -282,6 +284,13 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
+  const prevAvatarPublicId = await User.findById(req.user?._id, {
+    avatarPublicId: 1,
+    _id: 0,
+  });
+
+  console.log("Prev Avatar Public Id: ", prevAvatarPublicId.avatarPublicId);
+
   const avatarLocalPath = req.file?.path;
 
   if (!avatarLocalPath) {
@@ -294,13 +303,14 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error while uploading on avatar.");
   }
 
-  // await deleteFromCloudinary(avatar?.public_id);
+  await deleteFromCloudinary(prevAvatarPublicId.avatarPublicId);
 
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
         avatar: avatar.url,
+        avatarPublicId: avatar.public_id,
       },
     },
     { new: true }
@@ -312,6 +322,11 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 });
 
 const updateUserCoverImage = asyncHandler(async (req, res) => {
+  const prevCoverImagePublicId = await User.findById(req.user?._id, {
+    coverImagePublicId: 1,
+    _id: 0,
+  });
+
   const coverImageLocalPath = req.file?.path;
 
   if (!coverImageLocalPath) {
@@ -324,13 +339,14 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error while uploading on cover image.");
   }
 
-  // await deleteFromCloudinary(coverImage?.public_id);
+  await deleteFromCloudinary(prevCoverImagePublicId.coverImagePublicId);
 
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
         coverImage: coverImage.url,
+        coverImagePublicId: coverImage.public_id,
       },
     },
     { new: true }
