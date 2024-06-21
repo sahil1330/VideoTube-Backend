@@ -67,30 +67,46 @@ const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
   // TODO: get video, upload to cloudinary, create video
 
-  const videoFileLocalPath = req.file?.path;
-  const thumbnailFileLocalPath = req.file?.path;
+  console.log(req.files);
+  const videoFileLocalPath = req.files?.videoFile[0].path;
+
+  let thumbnailFileLocalPath;
+  if (
+    req.files &&
+    Array.isArray(req.files.thumbnailFileLocalPath) &&
+    req.files.thumbnailFileLocalPath.length > 0
+  ) {
+    thumbnailFileLocalPath = req.files?.thumbnail[0].path;
+  }
 
   if (!videoFileLocalPath) {
     throw new ApiError(400, "Video File is Missing!");
   }
 
-  if (!thumbnailFileLocalPath) {
-    throw new ApiError(400, "Thumbnail File is Missing!");
+  const videoFile = await uploadOnCloudinary(videoFileLocalPath);
+
+  if (!videoFile) {
+    throw new ApiError(400, "Error uploading video to cloudinary");
   }
 
-  const videoFile = await uploadOnCloudinary(videoFileLocalPath);
-  const thumbnail = await uploadOnCloudinary(thumbnailFileLocalPath);
-
-  if (!videoFile || !thumbnail) {
-    throw new ApiError(400, "Error uploading video or thumbnail to cloudinary");
+  let thumbnail;
+  if (thumbnailFileLocalPath) {
+    try {
+      thumbnail = await uploadOnCloudinary(thumbnailFileLocalPath);
+    } catch (error) {
+      throw new ApiError(
+        400,
+        error?.message || "Error uploading thumbnail to cloudinary"
+      );
+    }
   }
 
   const duration = videoFile.duration;
-  const owner = req.user._id;
+  const owner = req.user?._id;
 
   const video = await Video.create({
     videoFile: videoFile.url,
-    thumbnail: thumbnail.url,
+    thumbnail: thumbnail?.url,
     videoFilePublicId: videoFile.public_id,
     thumbnailPublicId: thumbnail.public_id,
     title,
@@ -100,6 +116,10 @@ const publishAVideo = asyncHandler(async (req, res) => {
     views: 0,
     isPublished: true,
   });
+
+  if (!video) {
+    throw new ApiError(400, "Error creating video.");
+  }
 
   const publishedVideo = await Video.findById(video._id);
 
@@ -216,7 +236,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
   }
 
   const isPublished = video.isPublished;
-  
+
   const updatedVideo = await Video.findByIdAndUpdate(
     videoId,
     {
