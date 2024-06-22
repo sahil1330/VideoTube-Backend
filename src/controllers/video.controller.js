@@ -32,6 +32,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     sort[sortBy] = sortType === "desc" ? -1 : 1;
   }
 
+  let videosresult;
   try {
     // create an aggregation pipeline
     const aggregationPipeline = [
@@ -48,7 +49,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
       limit: limitNumber,
     };
 
-    const videosresult = await Video.aggregatePaginate(
+    videosresult = await Video.aggregatePaginate(
       Video.aggregate(aggregationPipeline),
       options
     );
@@ -73,10 +74,10 @@ const publishAVideo = asyncHandler(async (req, res) => {
   let thumbnailFileLocalPath;
   if (
     req.files &&
-    Array.isArray(req.files.thumbnailFileLocalPath) &&
-    req.files.thumbnailFileLocalPath.length > 0
+    Array.isArray(req.files.thumbnail) &&
+    req.files.thumbnail.length > 0
   ) {
-    thumbnailFileLocalPath = req.files?.thumbnail[0].path;
+    thumbnailFileLocalPath = req.files.thumbnail[0].path;
   }
 
   if (!videoFileLocalPath) {
@@ -107,8 +108,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
   const video = await Video.create({
     videoFile: videoFile.url,
     thumbnail: thumbnail?.url,
-    videoFilePublicId: videoFile.public_id,
-    thumbnailPublicId: thumbnail.public_id,
     title,
     description,
     duration,
@@ -161,7 +160,7 @@ const updateVideo = asyncHandler(async (req, res) => {
   const prevThumbnailUrl = prevThumbnail.thumbnail;
 
   const { title, description } = req.body;
-  const thumbnailFileLocalPath = req.file;
+  const thumbnailFileLocalPath = req.file?.path;
 
   let thumbnail;
   if (thumbnailFileLocalPath) {
