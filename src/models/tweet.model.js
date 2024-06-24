@@ -10,6 +10,9 @@ const tweetSchema = new Schema(
       type: String,
       required: true,
     },
+    contentImage: {
+      type: String,
+    },
   },
   { timestamps: true }
 );
