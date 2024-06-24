@@ -1,7 +1,7 @@
 import Router from "express";
-import { upload } from "../middlewares/multer.middleware";
-import { verifyJWT } from "../middlewares/auth.middleware";
-import { createTweet } from "../controllers/tweet.controller";
+import { upload } from "../middlewares/multer.middleware.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { createTweet } from "../controllers/tweet.controller.js";
 
 const router = Router();
 

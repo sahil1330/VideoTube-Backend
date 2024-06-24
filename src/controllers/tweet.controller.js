@@ -1,10 +1,10 @@
 import mongoose, { isValidObjectId } from "mongoose";
-import { User } from "../models/user.model";
-import { Tweet } from "../models/tweet.model";
-import { asyncHandler } from "../utils/asyncHandler";
-import { ApiError } from "../utils/ApiError";
-import { ApiResponse } from "../utils/ApiResponse";
-import { uploadOnCloudinary } from "../utils/cloudinary";
+import { User } from "../models/user.model.js";
+import { Tweet } from "../models/tweet.model.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const createTweet = asyncHandler(async (req, res) => {
   const { content } = req.body;
@@ -30,8 +30,7 @@ const createTweet = asyncHandler(async (req, res) => {
       );
     }
   }
-  console.log(tweetImage);
-
+  
   const tweet = await Tweet.create({
     content,
     owner: req.user?._id,
