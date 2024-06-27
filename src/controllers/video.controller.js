@@ -209,13 +209,25 @@ const deleteVideo = asyncHandler(async (req, res) => {
   const thumbnail = video.thumbnail;
   const videoFile = video.videoFile;
 
-  await Video.findByIdAndDelete(videoId);
+  try {
+    await Video.findByIdAndDelete(videoId);
+  } catch (error) {
+    throw new ApiError(400, "Error deleting video.");
+  }
 
   if (thumbnail) {
-    await deleteFromCloudinary(thumbnail);
+    try {
+      await deleteFromCloudinary(thumbnail);
+    } catch (error) {
+      throw new ApiError(400, "Error deleting thumbnail from cloudinary.");
+    }
   }
   if (videoFile) {
-    await deleteFromCloudinary(videoFile);
+    try {
+      await deleteFromCloudinary(videoFile);
+    } catch (error) {
+      throw new ApiError(400, "Error deleting video file from cloudinary.")
+    }
   }
 
   return res
