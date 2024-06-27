@@ -4,7 +4,10 @@ import { Tweet } from "../models/tweet.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 
 const createTweet = asyncHandler(async (req, res) => {
   const { content } = req.body;
@@ -76,23 +79,51 @@ const getUserTweets = asyncHandler(async (req, res) => {
 const updateTweet = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
   const { content } = req.body;
-  const { tweetImage } = req.files.tweetImage[0].path;
+  const tweetImage = req.file?.path;
 
   if (!isValidObjectId(tweetId)) {
     throw new ApiError(400, "Invalid Tweet ID");
   }
+  const oldTweetImage = await Tweet.findById(tweetId).select("contentImage");
 
-  const tweet = await findByIdAndUpdate(
+  let contentImage;
+  if (tweetImage) {
+    try {
+      contentImage = await uploadOnCloudinary(tweetImage);
+    } catch (error) {
+      throw new ApiError(
+        400,
+        error?.message || "Error uploading tweet image to cloudinary"
+      );
+    }
+  }
+
+  const tweet = await Tweet.findByIdAndUpdate(
     tweetId,
     {
-      content,
-      contentImage: tweetImage,
+      $set: {
+        content,
+        contentImage: contentImage
+          ? contentImage?.url
+          : oldTweetImage?.contentImage,
+      },
     },
     { new: true }
   ).populate("owner", "-password -refreshToken");
 
   if (!tweet) {
     throw new ApiError(400, "Error updating tweet.");
+  }
+
+  if (contentImage && oldTweetImage?.contentImage) {
+    try {
+      await deleteFromCloudinary(oldTweetImage.contentImage);
+    } catch (error) {
+      throw new ApiError(
+        400,
+        "Error deleting old tweet image from cloudinary."
+      );
+    }
   }
 
   return res
@@ -107,7 +138,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid Tweet ID");
   }
 
-  const tweet = await Tweet.findById(tweetId);
+  const tweet = await Tweet.findById(tweetId).select("contentImage");
 
   if (!tweet) {
     throw new ApiError(404, "Tweet not found");
@@ -125,7 +156,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
     try {
       await deleteFromCloudinary(tweetImage);
     } catch (error) {
-      throw new ApiError(400, "Error deleting tweet image.");
+      throw new ApiError(400, "Error deleting tweet image from cloudinary.");
     }
   }
 
