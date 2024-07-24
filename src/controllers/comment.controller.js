@@ -105,3 +105,22 @@ const updateComment = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, comment, "Comment updated successfully"));
 });
+
+const deleteComment = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+  if (!isValidObjectId(commentId)) {
+    return new ApiError(400, "Invalid Comment Id");
+  }
+
+  try {
+    await Comment.findByIdAndDelete(commentId);
+  } catch (error) {
+    return new ApiError(400, "Error deleting comment");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Comment deleted successfully"));
+});
+
+export { getVideoComments, addComment, updateComment, deleteComment };
