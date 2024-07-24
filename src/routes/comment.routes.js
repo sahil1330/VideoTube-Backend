@@ -4,8 +4,8 @@ import { getVideoComments, addComment, updateComment, deleteComment } from "../c
 
 const router = Router();
 
-router.route("/get-comments").get(verifyJWT, getVideoComments);
-router.route("/add-comment").post(verifyJWT, addComment);
+router.route("/get-comments/:videoId").get(verifyJWT, getVideoComments);
+router.route("/add-comment/:videoId").post(verifyJWT, addComment);
 router.route("/update-comment/:commentId").patch(verifyJWT, updateComment);
 router.route("/delete-comment/:commentId").delete(verifyJWT, deleteComment);
 
