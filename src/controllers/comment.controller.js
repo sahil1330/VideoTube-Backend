@@ -1,14 +1,18 @@
-import mongoose from "mongoose";
-import { ApiError } from "../utils/ApiError";
-import { ApiResponse } from "../utils/ApiResponse";
-import { asyncHandler } from "../utils/asyncHandler";
-import { Comment } from "../models/comment.model";
-import { Video } from "../models/video.model";
+import mongoose, { isValidObjectId } from "mongoose";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { Comment } from "../models/comment.model.js";
+import { Video } from "../models/video.model.js";
 
 const getVideoComments = asyncHandler(async (req, res) => {
   // Get all comments for a video
   const { videoId } = req.params;
   const { page = 1, limit = 10 } = req.query;
+
+  if (!isValidObjectId(videoId)) {
+    return new ApiError(400, "Invalid video ID");
+  }
 
   // Convert page and limit string to number
   const pageNumber = Number(page) || 1;
@@ -34,4 +38,39 @@ const getVideoComments = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, comments, "Comments fetched successfully"));
+});
+
+const addComment = asyncHandler(async (req, res) => {
+  // Add a comment to a video
+  const { videoId } = req.params;
+  const { content } = req.body;
+
+  if (!isValidObjectId(videoId)) {
+    return new ApiError(400, "Invalid video ID");
+  }
+
+  if (!content) {
+    return new ApiError(400, "Content is required");
+  }
+
+  const video = await Video.findById(videoId);
+
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  let comment;
+  try {
+    comment = await Comment.create({
+      content,
+      video: videoId,
+      owner: req.user?._id,
+    });
+  } catch (error) {
+    throw new ApiError(400, error?.message || "Error creating comment");
+  }
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, comment, "Comment created successfully"));
 });
