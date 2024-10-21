@@ -19,6 +19,7 @@ connectDB()
   })
   .catch((err) => {
     console.log("MONGODB connection failed !!! : ", err);
+    logger.error(err);
   });
 
 const morganFormat = ":method :url :status :response-time ms";

@@ -1,3 +1,5 @@
+import logger from "../../logger";
+
 class ApiError extends Error {
   constructor(
     statusCode,
@@ -16,6 +18,7 @@ class ApiError extends Error {
       this.stack = stack;
     } else {
       Error.captureStackTrace(this, this.constructor);
+      logger.error(`${this.statusCode} - ${this.message} - ${this.stack}`);
     }
   }
 }

@@ -6,6 +6,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { deleteFromCloudinary } from "../utils/cloudinary.js";
+import logger from "../../logger.js";
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
@@ -68,7 +69,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
   // TODO: get video, upload to cloudinary, create video
 
-  console.log(req.files);
+  logger.info(req.files);
   const videoFileLocalPath = req.files?.videoFile[0].path;
 
   let thumbnailFileLocalPath;
@@ -226,7 +227,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     try {
       await deleteFromCloudinary(videoFile);
     } catch (error) {
-      throw new ApiError(400, "Error deleting video file from cloudinary.")
+      throw new ApiError(400, "Error deleting video file from cloudinary.");
     }
   }
 
