@@ -2,6 +2,8 @@
 import dotenv from "dotenv";
 import connectDB from "./db/index.js";
 import { app } from "./app.js";
+import logger from "../logger.js";
+import morgan from "morgan";
 
 dotenv.config({
   path: "./.env",
@@ -18,6 +20,23 @@ connectDB()
   .catch((err) => {
     console.log("MONGODB connection failed !!! : ", err);
   });
+
+const morganFormat = ":method :url :status :response-time ms";
+app.use(
+  morgan(morganFormat, {
+    stream: {
+      write: (message) => {
+        const logObject = {
+          method: message.split(" ")[0],
+          url: message.split(" ")[1],
+          status: message.split(" ")[2],
+          responseTime: message.split(" ")[3],
+        };
+        logger.info(JSON.stringify(logObject));
+      },
+    },
+  })
+);
 
 /*
 import express from "express";
