@@ -22,14 +22,16 @@ import videoRouter from "./routes/video.routes.js";
 import tweetRouter from "./routes/tweet.routes.js";
 import healthCheckRouter from "./routes/healthcheck.routes.js";
 import commentRouter from "./routes/comment.routes.js";
+import playlistRouter from "./routes/playlist.routes.js";
 
 // routes declaration
 // http://localhost:8000/api/v1/users/register
 // http://localhost:8000/api/v1/users/login
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/videos", videoRouter);
-app.use("/api/v1/tweets/", tweetRouter);
-app.use("/api/v1/healthcheck/", healthCheckRouter);
-app.use("/api/v1/comments/", commentRouter);
+app.use("/api/v1/tweets", tweetRouter);
+app.use("/api/v1/healthcheck", healthCheckRouter);
+app.use("/api/v1/comments", commentRouter);
+app.use("/api/v1/playlists", playlistRouter);
 
 export { app };

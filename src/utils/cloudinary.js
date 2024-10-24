@@ -1,6 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
-import logger from "../../logger";
+import logger from "../../logger.js";
 
 // Configuration
 cloudinary.config({
@@ -34,7 +34,8 @@ const deleteFromCloudinary = async (fileUrl) => {
     .destroy(publicId, {
       invalidate: true,
     })
-    .then((result) => logger.info(result));
+    .then((result) => logger.info(result))
+    .catch((error) => logger.error(error));
 };
 
 export { uploadOnCloudinary, deleteFromCloudinary };
