@@ -5,13 +5,17 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { PlayList } from "../models/playlist.model.js";
 import { Video } from "../models/video.model.js";
 
+// To get the playlists of a user
 const getUserPlaylists = asyncHandler(async (req, res) => {
-  const userId = req.params.userId;
+  const userId = req.params.userId; 
   if (!isValidObjectId(userId)) {
     throw new ApiError(400, "Invalid user id.");
   }
-  const userPlayList = await PlayList.find({ owner: userId });
-  if (!userPlayList) {
+  const userPlayList = await PlayList.find({ owner: userId })
+    .populate("videos")
+    .populate("owner")
+    .select("-password -refreshToken -watchHistory -createdAt -updatedAt");
+  if (!userPlayList || userPlayList.length === 0) {
     throw new ApiError(404, "No playlist found for this user.");
   }
 
@@ -22,13 +26,46 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     );
 });
 
+// To get a playlist by its id
 const getPlayList = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   if (!isValidObjectId(playlistId)) {
     throw new ApiError(400, "Invalid playlist id.");
   }
-  const playlist = await PlayList.findById(playlistId);
-  if (!playlist) {
+  // Just trying aggregation pipeline for populating videos and owner
+  const playlist = await PlayList.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(playlistId),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "videos",
+        foreignField: "_id",
+        as: "videos",
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    {
+      $project: {
+        "owner.password": 0,
+        "owner.refreshToken": 0,
+        "owner.watchHistory": 0,
+        "owner.createdAt": 0,
+        "owner.updatedAt": 0,
+      },
+    },
+  ]);
+  if (!playlist || playlist.length === 0) {
     throw new ApiError(404, "Playlist not found.");
   }
 
@@ -37,6 +74,7 @@ const getPlayList = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, playlist, "Playlist fetched successfully."));
 });
 
+// To create a new playlist
 const createPlayList = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
   const owner = req.user?._id;
@@ -53,6 +91,7 @@ const createPlayList = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, playlist, "Playlist created successfully."));
 });
 
+// To update a playlist
 const updatePlayList = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   if (!isValidObjectId(playlistId)) {
@@ -72,7 +111,10 @@ const updatePlayList = asyncHandler(async (req, res) => {
       },
     },
     { new: true }
-  );
+  )
+    .populate("videos")
+    .populate("owner")
+    .select("-password -refreshToken -watchHistory -createdAt -updatedAt");
   if (!updatedPlaylist) {
     throw new ApiError(400, "Error updating playlist.");
   }
@@ -83,6 +125,7 @@ const updatePlayList = asyncHandler(async (req, res) => {
     );
 });
 
+// To delete a playlist
 const deletePlayList = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   if (!isValidObjectId(playlistId)) {
@@ -90,7 +133,7 @@ const deletePlayList = asyncHandler(async (req, res) => {
   }
 
   try {
-    await PlayList.findByIdAndDelete(playlistId);
+    await PlayList.findByIdAndDelete(playlistId); // Deleting playlist document from collection by id 
   } catch (error) {
     return new ApiError(400, "Error deleting playlist.");
   }
@@ -99,6 +142,7 @@ const deletePlayList = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Playlist deleted successfully."));
 });
 
+// To add a video to a playlist
 const addVideoToPlayList = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   const { videoId } = req.body;
@@ -118,9 +162,12 @@ const addVideoToPlayList = asyncHandler(async (req, res) => {
   }
   const updatedPlaylist = await PlayList.findByIdAndUpdate(
     playlistId,
-    { $push: { videos: videoId } },
+    { $push: { videos: videoId } }, // Pushing video id to videos array
     { new: true }
-  );
+  )
+    .populate("videos")
+    .populate("owner")
+    .select("-password -refreshToken -watchHistory -createdAt -updatedAt");
 
   if (!updatedPlaylist) {
     throw new ApiError(400, "Error adding video to playlist.");
@@ -136,6 +183,7 @@ const addVideoToPlayList = asyncHandler(async (req, res) => {
     );
 });
 
+// To remove a video from a playlist
 const removeVideoFromPlayList = asyncHandler(async (req, res) => {
   const { playlistId } = req.params;
   const { videoId } = req.body;
@@ -151,11 +199,17 @@ const removeVideoFromPlayList = asyncHandler(async (req, res) => {
   if (!video) {
     throw new ApiError(404, "Video not found.");
   }
+  if (!playlist.videos.includes(videoId)) {
+    throw new ApiError(404, "Video doesn't exist in playlist.");
+  }
   const updatedPlaylist = await PlayList.findByIdAndUpdate(
     playlistId,
-    { $pull: { videos: videoId } },
+    { $pull: { videos: videoId } }, // Pulling out the video id from videos array
     { new: true }
-  );
+  )
+    .populate("videos")
+    .populate("owner")
+    .select("-password -refreshToken -watchHistory -createdAt -updatedAt");
   if (!updatedPlaylist) {
     throw new ApiError(400, "Error removing video from playlist.");
   }
