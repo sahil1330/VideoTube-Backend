@@ -1,12 +1,14 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Video } from "../models/video.model.js";
 import { User } from "../models/user.model.js";
+import { Like } from "../models/like.model.js";
+import { Comment } from "../models/comment.model.js";
+import { PlayList } from "../models/playlist.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { deleteFromCloudinary } from "../utils/cloudinary.js";
-import logger from "../../logger.js";
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
@@ -69,7 +71,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
   // TODO: get video, upload to cloudinary, create video
 
-  logger.info(req.files);
   const videoFileLocalPath = req.files?.videoFile[0].path;
 
   let thumbnailFileLocalPath;
@@ -212,6 +213,32 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
   try {
     await Video.findByIdAndDelete(videoId);
+    try {
+      await User.updateMany(
+        { watchHistory: videoId },
+        { $pull: { watchHistory: videoId } }
+      );
+    } catch (error) {
+      throw new ApiError(400, "Error deleting video from watch history.");
+    }
+    try {
+      await Like.deleteMany({ video: videoId });
+    } catch (error) {
+      throw new ApiError(400, "Error deleting video likes.");
+    }
+    try {
+      await Comment.deleteMany({ video: videoId });
+    } catch (error) {
+      throw new ApiError(400, "Error deleting video comments.");
+    }
+    try {
+      await PlayList.updateMany(
+        { videos: videoId },
+        { $pull: { videos: videoId } }
+      );
+    } catch (error) {
+      throw new ApiError(400, "Error deleting video from playlists.");
+    }
   } catch (error) {
     throw new ApiError(400, "Error deleting video.");
   }

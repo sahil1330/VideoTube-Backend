@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Comment } from "../models/comment.model.js";
 import { Video } from "../models/video.model.js";
+import { Like } from "../models/like.model.js";
 
 const getVideoComments = asyncHandler(async (req, res) => {
   // Get all comments for a video
@@ -11,7 +12,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
 
   if (!isValidObjectId(videoId)) {
-    return new ApiError(400, "Invalid video ID");
+    throw new ApiError(400, "Invalid video ID");
   }
 
   // Convert page and limit string to number
@@ -46,11 +47,11 @@ const addComment = asyncHandler(async (req, res) => {
   const { content } = req.body;
 
   if (!isValidObjectId(videoId)) {
-    return new ApiError(400, "Invalid video ID");
+    throw new ApiError(400, "Invalid video ID");
   }
 
   if (!content) {
-    return new ApiError(400, "Content is required");
+    throw new ApiError(400, "Content is required");
   }
 
   const video = await Video.findById(videoId);
@@ -80,11 +81,11 @@ const updateComment = asyncHandler(async (req, res) => {
   const { content } = req.body;
 
   if (!isValidObjectId(commentId)) {
-    return new ApiError(400, "Invalid Comment Id");
+    throw new ApiError(400, "Invalid Comment Id");
   }
 
   if (!content) {
-    return new ApiError(400, "Content is required");
+    throw new ApiError(400, "Content is required");
   }
 
   const comment = await Comment.findByIdAndUpdate(
@@ -98,7 +99,7 @@ const updateComment = asyncHandler(async (req, res) => {
   );
 
   if (!comment) {
-    return new ApiError(404, "Comment not found");
+    throw new ApiError(404, "Comment not found");
   }
 
   return res
@@ -114,8 +115,13 @@ const deleteComment = asyncHandler(async (req, res) => {
 
   try {
     await Comment.findByIdAndDelete(commentId);
+    try {
+      await Like.deleteMany({ comment: commentId });
+    } catch (error) {
+      throw new ApiError(400, "Error deleting comment likes");
+    }
   } catch (error) {
-    return new ApiError(400, "Error deleting comment");
+    throw new ApiError(400, "Error deleting comment -" + error.message);
   }
 
   return res
