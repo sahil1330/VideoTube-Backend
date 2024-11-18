@@ -24,6 +24,7 @@ import healthCheckRouter from "./routes/healthcheck.routes.js";
 import commentRouter from "./routes/comment.routes.js";
 import playlistRouter from "./routes/playlist.routes.js";
 import likeRouter from "./routes/like.routes.js";
+import subscriptionRouter from "./routes/subscription.routes.js";
 
 // routes declaration
 // http://localhost:8000/api/v1/users/register
@@ -35,5 +36,6 @@ app.use("/api/v1/healthcheck", healthCheckRouter);
 app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/playlists", playlistRouter);
 app.use("/api/v1/likes", likeRouter);
+app.use("/api/v1/subscriptions", subscriptionRouter);
 
 export { app };
