@@ -466,6 +466,36 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     );
 });
 
+const deleteVideoFromWatchHistory = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid video id");
+  }
+
+  const user = await user
+    .findByIdAndUpdate(req.user?._id, {
+      $pull: {
+        watchHistory: videoId,
+      },
+    })
+    .populate("watchHistory")
+    .select("watchHistory");
+
+  if (!user) {
+    throw new ApiError(400, "Error deleting video from watch history.");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user,
+        "Video deleted from watch history successfully."
+      )
+    );
+});
+
 export {
   registerUser,
   loginUser,
@@ -478,4 +508,5 @@ export {
   updateUserCoverImage,
   getUserChannelProfile,
   getWatchHistory,
+  deleteVideoFromWatchHistory,
 };

@@ -16,7 +16,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
   // Convert page and limit string to number
   const pageNumber = Number(page) || 1;
   const limitNumber = Number(limit) || 10;
-  const matchQuery = {};
+  let matchQuery = {};
   if (query) {
     matchQuery = {
       $or: [
@@ -141,10 +141,45 @@ const getVideoById = asyncHandler(async (req, res) => {
   if (!isValidObjectId(videoId)) {
     throw new ApiError(400, "Invalid video id");
   }
+  const userWatchHistory = await User.findById(req.user?._id).select(
+    "watchHistory"
+  );
+  if (!userWatchHistory) {
+    throw new ApiError(400, "Error fetching user watch history.");
+  }
 
-  const video = await Video.findById(videoId);
+  const watchHistoryStrings = userWatchHistory.watchHistory.map((id) =>
+    id.toString()
+  );
+  if (watchHistoryStrings.includes(videoId)) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Video Already viewed by user."));
+  }
+
+  // Update Video View
+  const video = await Video.findByIdAndUpdate(
+    videoId,
+    {
+      $inc: {
+        views: 1,
+      },
+    },
+    { new: true }
+  );
   if (!video) {
-    throw new ApiError(404, "Video not found");
+    throw new ApiError("400", "Error Incrementing Views");
+  }
+
+  // Update User Watch History
+  const updateWatchHistory = await User.findByIdAndUpdate(req.user?._id, {
+    $push: {
+      watchHistory: videoId,
+    },
+  });
+
+  if (!updateWatchHistory) {
+    throw new ApiError("400", "Error Updating Watch History");
   }
 
   return res
