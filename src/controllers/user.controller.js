@@ -115,13 +115,13 @@ const loginUser = asyncHandler(async (req, res) => {
   // access and refresh token
   // send cookie
 
-  const { email, username, password } = req.body;
+  const { identifier, password } = req.body;
 
-  if (!(username || email)) {
+  if (!(identifier || password)) {
     throw new ApiError(400, "Username or Password is required.");
   }
 
-  const user = await User.findOne({ $or: [{ email }, { username }] });
+  const user = await User.findOne({ $or: [{ email: identifier }, { username: identifier }] });
 
   if (!user) {
     throw new ApiError(404, "User does not exist");
