@@ -26,7 +26,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     };
   }
   if (userId || isValidObjectId(userId)) {
-    matchQuery.owner = userId;
+    matchQuery.owner = new mongoose.Types.ObjectId(userId);
   }
 
   // sort videos
@@ -46,7 +46,20 @@ const getAllVideos = asyncHandler(async (req, res) => {
         $sort: sort,
       },
     ];
-
+    aggregationPipeline.push({
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner"
+      },
+    });
+    aggregationPipeline.push({
+      $unwind: {
+        path: "$owner",
+        preserveNullAndEmptyArrays: true
+      }
+    });
     const options = {
       page: pageNumber,
       limit: limitNumber,
@@ -55,7 +68,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     videosresult = await Video.aggregatePaginate(
       Video.aggregate(aggregationPipeline),
       options
-    );
+    )
   } catch (error) {
     throw new ApiError(400, error?.message || "Error fetching videos.");
   }
@@ -109,7 +122,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
   const video = await Video.create({
     videoFile: videoFile.url,
+    videoFilePublicId: videoFile.public_id,
     thumbnail: thumbnail?.url,
+    thumbnailPublicId: thumbnail?.public_id,
     title,
     description,
     duration,
@@ -214,6 +229,7 @@ const updateVideo = asyncHandler(async (req, res) => {
         title,
         description,
         thumbnail: thumbnail ? thumbnail.url : prevThumbnailUrl,
+        thumbnailPublicId: thumbnail ? thumbnail.public_id : prevThumbnail.public_id,
       },
     },
     { new: true }

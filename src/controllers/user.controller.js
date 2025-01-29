@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import {
   uploadOnCloudinary,
   deleteFromCloudinary,
+  autoCropAvatarUrl,
 } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { response } from "express";
@@ -84,11 +85,13 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!avatar) {
     throw new ApiError(400, "Avatar file is required");
   }
-
+  avatar.url = autoCropAvatarUrl(avatar.url);
   const user = await User.create({
     fullName,
     avatar: avatar.url,
+    avatarPublicId: avatar?.public_id,
     coverImage: coverImage?.url,
+    coverImagePublicId: coverImage?.public_id,
     email,
     password,
     username: username.toLowerCase(),
@@ -293,7 +296,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   if (!avatar.url) {
     throw new ApiError(400, "Error while uploading on avatar.");
   }
-
+  avatar.url = autoCropAvatarUrl(avatar.url);
   await deleteFromCloudinary(req.user?.avatar);
 
   const user = await User.findByIdAndUpdate(
@@ -301,6 +304,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     {
       $set: {
         avatar: avatar.url,
+        avatarPublicId: avatar.public_id,
       },
     },
     { new: true }
@@ -331,6 +335,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     {
       $set: {
         coverImage: coverImage.url,
+        coverImagePublicId: coverImage.public_id,
       },
     },
     { new: true }

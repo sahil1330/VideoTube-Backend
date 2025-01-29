@@ -16,6 +16,8 @@ const uploadOnCloudinary = async (localFilePath) => {
     // upload the file on cloudinary
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
+      folder: "videotube",
+      transformation: [{ quality: "auto", fetch_format: "auto" }],
     });
     // file has been uploaded successfully
     // console.log("File is uploaded on cloudinary ", response.url);
@@ -38,4 +40,8 @@ const deleteFromCloudinary = async (fileUrl) => {
     .catch((error) => logger.error(error));
 };
 
-export { uploadOnCloudinary, deleteFromCloudinary };
+const autoCropAvatarUrl = (avatarUrl) => {
+  return avatarUrl.replace("/upload/", "/upload/w_400,h_400,c_thumb,g_face/");
+};
+
+export { uploadOnCloudinary, deleteFromCloudinary, autoCropAvatarUrl };

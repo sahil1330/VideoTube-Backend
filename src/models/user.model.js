@@ -29,8 +29,14 @@ const userSchema = new Schema(
       type: String, // cloudinary url
       required: true,
     },
+    avatarPublicId: {
+      type: String, // cloudinary public id
+    },
     coverImage: {
       type: String, // cloudinary url
+    },
+    coverImagePublicId: {
+      type: String, // cloudinary public id
     },
     watchHistory: [
       {
@@ -58,7 +64,20 @@ userSchema.pre("save", async function (next) {
 userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
-
+userSchema.pre("remove", async function (next) {
+  try {
+    await this.model("Video").deleteMany({ user: this._id });
+    await this.model("Playlist").deleteMany({ user: this._id });
+    await this.model("Comment").deleteMany({ user: this._id });
+    await this.model("Like").deleteMany({ user: this._id });
+    await this.model("subscription").deleteMany({ user: this._id });
+    await this.model("Tweet").deleteMany({ user: this._id });
+    // Add more models if needed
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
     {

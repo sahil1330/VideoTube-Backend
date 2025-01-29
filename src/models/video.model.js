@@ -7,8 +7,14 @@ const videoSchema = new Schema(
       type: String, // cloudinary url
       required: true,
     },
+    videoFilePublicId: {
+      type: String, // cloudinary public id
+    },
     thumbnail: {
       type: String, // cloudinary url
+    },
+    thumbnailPublicId: {
+      type: String, // cloudinary public id
     },
     title: {
       type: String,
@@ -38,5 +44,23 @@ const videoSchema = new Schema(
 );
 
 videoSchema.plugin(mongooseAggregatePaginate);
+
+videoSchema.pre("remove", async function (next) {
+  try {
+    await this.model("User").updateMany(
+      { watchHistory: this._id },
+      { $pull: { watchHistory: this._id } }
+    );
+    await this.model("Comment").deleteMany({ video: this._id });
+    await this.model("Like").deleteMany({ video: this._id });
+    await this.model("Playlist").updateMany(
+      { videos: this._id },
+      { $pull: { videos: this._id } }
+    );
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 export const Video = mongoose.model("Video", videoSchema);
