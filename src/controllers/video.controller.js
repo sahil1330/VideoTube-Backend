@@ -163,7 +163,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error fetching user watch history.");
   }
 
-  const watchHistoryStrings = userWatchHistory.watchHistory.map((id) =>
+  const watchHistoryStrings = userWatchHistory?.watchHistory.map((id) =>
     id.toString()
   );
   if (watchHistoryStrings.includes(videoId)) {

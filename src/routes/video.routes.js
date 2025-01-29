@@ -34,10 +34,10 @@ router
 
 router
   .route("/:videoId")
-  .get(getVideoById)
+  .get(verifyJWT, getVideoById)
   .delete(verifyJWT, deleteVideo)
   .patch(verifyJWT, upload.single("thumbnail"), updateVideo);
 
-router.route("/toggle/publish/:videoId").patch(verifyJWT,togglePublishStatus);
+router.route("/toggle/publish/:videoId").patch(verifyJWT, togglePublishStatus);
 
 export default router;
