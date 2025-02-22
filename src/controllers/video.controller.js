@@ -153,6 +153,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
   //TODO: get video by id
+  console.log(videoId)
   if (!isValidObjectId(videoId)) {
     throw new ApiError(400, "Invalid video id");
   }
@@ -167,9 +168,13 @@ const getVideoById = asyncHandler(async (req, res) => {
     id.toString()
   );
   if (watchHistoryStrings.includes(videoId)) {
+    const video = await Video.findById(videoId).populate("owner");
+    if (!video) {
+      throw new ApiError(400, "Error fetching video.");
+    }
     return res
       .status(200)
-      .json(new ApiResponse(200, {}, "Video Already viewed by user."));
+      .json(new ApiResponse(200, video, "Video Already viewed by user."));
   }
 
   // Update Video View
@@ -181,7 +186,7 @@ const getVideoById = asyncHandler(async (req, res) => {
       },
     },
     { new: true }
-  );
+  ).populate("owner");
   if (!video) {
     throw new ApiError("400", "Error Incrementing Views");
   }

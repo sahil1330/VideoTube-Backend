@@ -29,6 +29,32 @@ const getVideoComments = asyncHandler(async (req, res) => {
         {
           $sort: { createdAt: -1 },
         },
+        {
+          $lookup: {
+            from: "users",
+            localField: "owner",
+            foreignField: "_id",
+            as: "owner",
+          },
+        },
+        {
+          $unwind: "$owner",
+        },
+        {
+          $project: {
+            "owner.password": 0,
+            "owner.refreshToken": 0,
+            "owner.coverImage": 0,
+            "owner.coverImagePublicId": 0,
+            "owner.avatarPublicId": 0,
+            "owner.email": 0,
+            "owner.watchHistory": 0,
+            "owner.createdAt": 0,
+            "owner.updatedAt": 0,
+            "owner.__v": 0,
+            
+          },
+        },
       ]),
       { page: pageNumber, limit: limitNumber }
     );
@@ -67,6 +93,7 @@ const addComment = asyncHandler(async (req, res) => {
       video: videoId,
       owner: req.user?._id,
     });
+    comment = await Comment.findById(comment._id).populate("owner", "-password -refreshToken");
   } catch (error) {
     throw new ApiError(400, error?.message || "Error creating comment");
   }

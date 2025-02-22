@@ -129,4 +129,54 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     );
 });
 
-export { toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos };
+// To get the count of likes on a video
+const getVideoLikes = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Invalid video id.");
+  }
+  const video = await Video.findById(videoId);
+  if (!video) {
+    throw new ApiError(404, "Video not found.");
+  }
+  const videoLikes = await Like.find({ video: videoId }).select("likedBy").populate("likedBy", "_id");
+  // const videoLikes = await Like.find({ video: videoId }).populate("likedBy").select("likedBy");
+  const videoLikesCount = videoLikes.length;
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { videoLikes, videoLikesCount }, "Video likes count fetched successfully.")
+    );
+})
+
+// To get the count of likes on a tweet
+const getTweetLikesCount = asyncHandler(async (req, res) => {
+  const { tweetId } = req.params;
+  if (!isValidObjectId(tweetId)) {
+    throw new ApiError(400, "Invalid tweet id.");
+  }
+  const tweet = await Tweet.findById(tweetId);
+  if (!tweet) {
+    throw new ApiError(404, "Tweet not found.");
+  }
+  const tweetLikesCount = await Like.countDocuments({ tweet: tweetId });
+  return res
+    .status(200).json(new ApiResponse(200, tweetLikesCount, " Tweet Likes fetched Successfully"))
+})
+
+// To get the count of likes on a comment
+const getCommentLikesCount = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+  if (!isValidObjectId(commentId)) {
+    throw new ApiError(400, "Invalid comment id.");
+  }
+  const comment = await Comment.findById(commentId);
+  if (!comment) {
+    throw new ApiError(404, "Comment not found.");
+  }
+  const commentLikesCount = await Like.countDocuments({ comment: commentId });
+  return res
+    .status(200).json(new ApiResponse(200, commentLikesCount, "Comment Likes fetched Successfully"))
+})
+
+export { toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos, getVideoLikes, getTweetLikesCount, getCommentLikesCount };

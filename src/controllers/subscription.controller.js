@@ -8,12 +8,12 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 const toggleSubscription = asyncHandler(async (req, res) => {
   const { channelId } = req.params;
   const subscriberId = req.user?._id;
-
+  console.log(subscriberId.toString(), channelId);
   if (!isValidObjectId(channelId)) {
     throw new ApiError(400, "Invalid Channel Id");
   }
 
-  if (subscriberId === channelId) {
+  if (subscriberId.toString() === channelId) {
     throw new ApiError(400, "You cannot subscribe to yourself");
   }
 
