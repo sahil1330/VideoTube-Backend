@@ -7,7 +7,7 @@ import { Video } from "../models/video.model.js";
 
 // To get the playlists of a user
 const getUserPlaylists = asyncHandler(async (req, res) => {
-  const userId = req.params.userId; 
+  const userId = req.params.userId;
   if (!isValidObjectId(userId)) {
     throw new ApiError(400, "Invalid user id.");
   }
@@ -16,7 +16,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     .populate("owner")
     .select("-password -refreshToken -watchHistory -createdAt -updatedAt");
   if (!userPlayList || userPlayList.length === 0) {
-    throw new ApiError(404, "No playlist found for this user.");
+    throw new ApiError(404, "No playlist found.");
   }
 
   return res
