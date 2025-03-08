@@ -117,7 +117,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
   const likedVideos = await Like.find({
     likedBy: userId,
     video: { $ne: null },
-  }).populate("video");
+  }).select("video").populate("video");
   const filteredLikedVideos = likedVideos.filter((like) => like.video !== null);
   if (!filteredLikedVideos) {
     throw new ApiError(404, "No liked videos found.");
