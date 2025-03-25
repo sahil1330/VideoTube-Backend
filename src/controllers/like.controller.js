@@ -124,7 +124,6 @@ const getLikedVideos = asyncHandler(async (req, res) => {
       select: "_id username fullName avatar"
     }
   });
-  console.log(likedVideos);
 
   const filteredLikedVideos = likedVideos.filter((like) => like.video !== null);
   if (!filteredLikedVideos) {
