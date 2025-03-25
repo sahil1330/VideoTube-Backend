@@ -264,19 +264,48 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName, email } = req.body;
-  if (!fullName || !email) {
-    throw new ApiError(400, "All fields are required.");
+  const { fullName, email, username } = req.body;
+  const userId = req.user?._id;
+  console.log("Full Name: ", fullName);
+  console.log("Email: ", email);
+  const updates = {};
+
+  if (fullName && fullName !== req.user?.fullName) {
+    updates.fullName = fullName;
   }
+
+  if (email && email !== req.user?.email) {
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      throw new ApiError(409, "Email is already taken.");
+    }
+    updates.email = email;
+  }
+
+  if (username && username !== req.user?.username) {
+    const existingUsername = await User
+      .findOne({ username: username.toLowerCase() })
+      .collation({ locale: "en", strength: 2 });
+    if (existingUsername) {
+      throw new ApiError(409, "Username is already taken.");
+    }
+    updates.username = username.toLowerCase();
+  }
+
+  if (!updates.username && !updates.email && !updates.fullName) {
+    return res.status(200).json(
+      new ApiResponse(200, {}, "No changes made to the user profile.")
+    );
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new ApiError(400, "At least one field is required for update");
+  }
+  console.log("Updates: ", updates);
 
   const user = await User.findByIdAndUpdate(
     req.user?._id,
-    {
-      $set: {
-        fullName,
-        email,
-      },
-    },
+    { $set: updates },
     { new: true }
   ).select("-password");
   return res
