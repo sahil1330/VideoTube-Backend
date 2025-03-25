@@ -117,7 +117,15 @@ const getLikedVideos = asyncHandler(async (req, res) => {
   const likedVideos = await Like.find({
     likedBy: userId,
     video: { $ne: null },
-  }).select("video").populate("video");
+  }).select("video").populate({
+    path: "video",
+    populate: {
+      path: "owner",
+      select: "_id username fullName avatar"
+    }
+  });
+  console.log(likedVideos);
+
   const filteredLikedVideos = likedVideos.filter((like) => like.video !== null);
   if (!filteredLikedVideos) {
     throw new ApiError(404, "No liked videos found.");
@@ -166,7 +174,7 @@ const getTweetLikesCount = asyncHandler(async (req, res) => {
 
 // To get the count of likes on a comment
 const getCommentLikesCount = asyncHandler(async (req, res) => {
-  const { commentId } = req.params;
+  const { commentId, userId } = req.params;
   if (!isValidObjectId(commentId)) {
     throw new ApiError(400, "Invalid comment id.");
   }
@@ -174,9 +182,10 @@ const getCommentLikesCount = asyncHandler(async (req, res) => {
   if (!comment) {
     throw new ApiError(404, "Comment not found.");
   }
-  const commentLikesCount = await Like.countDocuments({ comment: commentId });
+  const commentLikes = await Like.find({ comment: commentId }).select("likedBy").populate("likedBy", "_id");
+  // const commentLikesCount = await Like.countDocuments({ comment: commentId });
   return res
-    .status(200).json(new ApiResponse(200, commentLikesCount, "Comment Likes fetched Successfully"))
+    .status(200).json(new ApiResponse(200, commentLikes, "Comment Likes fetched Successfully"))
 })
 
 export { toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos, getVideoLikes, getTweetLikesCount, getCommentLikesCount };

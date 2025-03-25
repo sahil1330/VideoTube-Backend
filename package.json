@@ -5,7 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js"
+    "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "watch-tests": "NODE_OPTIONS=--experimental-vm-modules jest --watchAll"
   },
   "author": "Sahil",
   "license": "ISC",
