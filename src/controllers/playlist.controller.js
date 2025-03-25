@@ -14,7 +14,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
   const userPlayList = await PlayList.find({ owner: userId })
     .populate("videos")
     .populate("owner")
-    .select("-password -refreshToken -watchHistory -createdAt -updatedAt");
+    .select("-password -refreshToken -watchHistory -updatedAt");
   if (!userPlayList || userPlayList.length === 0) {
     throw new ApiError(404, "No playlist found.");
   }
