@@ -2,6 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { Comment } from "../models/comment.model.js";
 import { User } from "../models/user.model.js";
 import { Video } from "../models/video.model.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 const searchContent = asyncHandler(async (req, res) => {
     // Import necessary models
@@ -67,6 +68,8 @@ const searchContent = asyncHandler(async (req, res) => {
                     "description": 1,
                     "thumbnail": 1,
                     "videoFile": 1,
+                    "duration": 1,
+                    "views": 1,
                     "createdAt": 1,
                     "updatedAt": 1,
                     "owner": 1
@@ -105,4 +108,29 @@ const searchContent = asyncHandler(async (req, res) => {
     }
 })
 
-export { searchContent }
+const autoCompleteSearch = asyncHandler(async (req, res) => {
+    const query = req.query.q;
+
+    const videos = await Video.find({
+        $or: [
+            { title: { $regex: query, $options: 'i' } },
+            { description: { $regex: query, $options: 'i' } }
+        ]
+    }).limit(10).select('title');
+
+    const users = await User.find({
+        $or: [
+            { username: { $regex: query, $options: 'i' } },
+            { fullName: { $regex: query, $options: 'i' } }
+        ]
+    }).limit(10).select('username fullName');
+
+    const autoCompleteSearchResults = {
+        videos,
+        users,
+    }
+
+    return res.status(200).json(new ApiResponse(200, autoCompleteSearchResults, "Auto-complete search results fetched successfully."));
+})
+
+export { searchContent, autoCompleteSearch }

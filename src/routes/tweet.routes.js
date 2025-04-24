@@ -6,6 +6,7 @@ import {
   deleteTweet,
   getUserTweets,
   updateTweet,
+  getTweetById
 } from "../controllers/tweet.controller.js";
 
 const router = Router();
@@ -17,6 +18,7 @@ router.route("/").post(upload.single("tweetImage"), createTweet);
 router.route("/user/:userId").get(getUserTweets);
 router
   .route("/:tweetId")
+  .get(getTweetById) // Assuming this is for getting a single tweet by ID
   .patch(upload.single("tweetImage"), updateTweet)
   .delete(deleteTweet);
 
