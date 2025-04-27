@@ -1,9 +1,9 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-
+import { Resend } from "resend";
 const app = express();
-
+export const resend = new Resend("re_EcrQh2uE_8QXXS1vqJB78bFGJAaKhLKwQ");
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN,

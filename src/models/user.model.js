@@ -51,6 +51,12 @@ const userSchema = new Schema(
     refreshToken: {
       type: String,
     },
+    forgetPasswordCode: {
+      type: String,
+    },
+    forgetPasswordCodeExpiry: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

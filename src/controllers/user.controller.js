@@ -10,6 +10,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { response } from "express";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import { resend } from "../app.js";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -251,6 +252,85 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, req.user, "Current User fetched Successfully."));
 });
+
+const sendForgetPasswordOTP = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    throw new ApiError(400, "Email is required.");
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new ApiError(404, "User does not exist.");
+  }
+
+  let digits = '0123456789';
+  let OTP = '';
+  let len = digits.length
+  for (let i = 0; i < 6; i++) {
+    OTP += digits[Math.floor(Math.random() * len)];
+  }
+
+  user.forgetPasswordCode = OTP;
+  user.forgetPasswordCodeExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes expiry time
+  await user.save({ validateBeforeSave: false });
+
+  const { data, error } = await resend.emails.send({
+    from: "Acme <onboarding@resend.dev>",
+    to: [email],
+    subject: `OTP for password reset`,
+    html: `<strong>Your OTP is: ${OTP}</strong>`,
+  });
+
+  if (error) {
+    return res.status(400).json({ error });
+  }
+
+  res.status(200).json(new ApiResponse(200, {}, "OTP sent successfully."));
+
+  // send email to user with the reset token
+})
+
+const checkForgetPasswordCode = asyncHandler(async (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) {
+    throw new ApiError(400, "Email and code are required.");
+  }
+
+  const user = await User.findOne({
+    email,
+    forgetPasswordCode: code,
+    forgetPasswordCodeExpiry: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    throw new ApiError(400, "Invalid or expired code.");
+  }
+
+  return res.status(200).json(new ApiResponse(200, {}, "Code is valid."));
+})
+
+const createNewPassword = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    throw new ApiError(400, "Email and password are required.");
+  }
+  const user = await User.findOne({ email, forgetPasswordCode: { $exists: true }, forgetPasswordCodeExpiry: { $gt: Date.now() } });
+  if (!user) {
+    throw new ApiError(404, "User does not exist.");
+  }
+
+  try {
+    user.password = password;
+    user.forgetPasswordCode = undefined;
+    user.forgetPasswordCodeExpiry = undefined;
+    await user.save({ validateBeforeSave: false });
+  } catch (error) {
+    throw new ApiError(500, "Something went wrong while creating new password.");
+  }
+
+  return res.status(200).json(new ApiResponse(200, {}, "Password updated successfully."));
+})
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
   const { fullName, email, username } = req.body;
@@ -528,4 +608,7 @@ export {
   getUserChannelProfile,
   getWatchHistory,
   deleteVideoFromWatchHistory,
+  sendForgetPasswordOTP,
+  checkForgetPasswordCode,
+  createNewPassword
 };
