@@ -99,20 +99,31 @@ const publishAVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Video File is Missing!");
   }
 
-  const videoFile = await uploadOnCloudinary(videoFileLocalPath);
-
-  if (!videoFile) {
-    throw new ApiError(400, "Error uploading video to cloudinary");
+  let videoFile;
+  try {
+    console.log("Attempting to upload video from path:", videoFileLocalPath);
+    videoFile = await uploadOnCloudinary(videoFileLocalPath);
+    console.log("Upload response:", videoFile);
+    
+    if (!videoFile) {
+      throw new ApiError(400, "Failed to upload video to cloudinary");
+    }
+  } catch (error) {
+    console.error("Cloudinary upload error:", error);
+    throw new ApiError(400, `Error uploading video to cloudinary: ${error.message}`);
   }
 
   let thumbnail;
   if (thumbnailFileLocalPath) {
     try {
+      console.log("Attempting to upload thumbnail from path:", thumbnailFileLocalPath);
       thumbnail = await uploadOnCloudinary(thumbnailFileLocalPath);
+      console.log("Thumbnail upload response:", thumbnail);
     } catch (error) {
+      console.error("Thumbnail upload error:", error);
       throw new ApiError(
         400,
-        error?.message || "Error uploading thumbnail to cloudinary"
+        `Error uploading thumbnail to cloudinary: ${error.message}`
       );
     }
   }

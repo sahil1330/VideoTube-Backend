@@ -3,14 +3,13 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { Resend } from "resend";
 const app = express();
-export const resend = new Resend("re_EcrQh2uE_8QXXS1vqJB78bFGJAaKhLKwQ");
-const corsOptions = {
-  origin: process.env.CORS_ORIGIN, // Replace with your React app's domain
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true, // If you need to handle cookies
-  optionsSuccessStatus: 204,
-};
-app.use(cors(corsOptions));
+export const resend = new Resend(process.env.RESEND_API_KEY);
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
